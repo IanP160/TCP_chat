@@ -1,48 +1,40 @@
 import socket
 import threading
-import tkinter as tk
-from tkinter import scrolledtext
 
-def receive_messages(client_socket, text_area):
+def receive_messages(client_socket):
     while True:
         try:
             message = client_socket.recv(1024).decode()
-            text_area.config(state=tk.NORMAL)
-            text_area.insert(tk.END, message + "\n")
-            text_area.config(state=tk.DISABLED)
+            if message:
+                print("\n" + message)  # Display messages from the server
         except:
+            print("\n[ERROR] Connection lost.")
             break
 
-def send_message():
-    message = entry.get()
-    client_socket.send(message.encode())
-    entry.delete(0, tk.END)
-
 def start_client():
-    global client_socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect(("127.0.0.1", 5555))
+
+    # Receive and display the "Enter your username" message from server
+    server_message = client_socket.recv(1024).decode()
+    print(server_message)  
 
     username = input("Enter your username: ")
     client_socket.send(username.encode())
 
-    root = tk.Tk()
-    root.title(f"Chat - {username}")
+    # Start receiving messages
+    threading.Thread(target=receive_messages, args=(client_socket,), daemon=True).start()
 
-    text_area = scrolledtext.ScrolledText(root, state=tk.DISABLED, width=50, height=15)
-    text_area.pack()
+    while True:
+        try:
+            message = input()
+            if message.lower() == "exit":
+                break
+            client_socket.send(message.encode())
+        except KeyboardInterrupt:
+            break
 
-    entry_frame = tk.Frame(root)
-    entry_frame.pack()
+    client_socket.close()
 
-    global entry
-    entry = tk.Entry(entry_frame, width=40)
-    entry.pack(side=tk.LEFT)
-
-    send_button = tk.Button(entry_frame, text="Send", command=send_message)
-    send_button.pack(side=tk.RIGHT)
-
-    threading.Thread(target=receive_messages, args=(client_socket, text_area)).start()
-    root.mainloop()
-
-start_client()
+if __name__ == "__main__":
+    start_client()
