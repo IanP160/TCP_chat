@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VLAN Routing Dashboard</title>
+    <script>
+        function updateRouting(vlan1, vlan2, status) {
+            fetch("/update_routing", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `vlan1=${vlan1}&vlan2=${vlan2}&status=${status}`
+            }).then(response => response.json())
+              .then(data => alert(data.message));
+        }
+    </script>
+</head>
+<body>
+    <h2>VLAN Routing Control</h2>
+    <table>
+        {% for vlan_pair, status in routing_table.items() %}
+        <tr>
+            <td>{{ vlan_pair.replace('_', ' <--> ') }}</td>
+            <td>{{ "Allowed" if status else "Blocked" }}</td>
+            <td>
+                <button onclick="updateRouting('{{ vlan_pair.split('_')[0] }}', '{{ vlan_pair.split('_')[1] }}', '{{ 'false' if status else 'true' }}')">
+                    {{ "Disable" if status else "Enable" }}
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
